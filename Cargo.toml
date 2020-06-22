@@ -13,3 +13,5 @@ approx = "^0.3.0"
 
 [build-dependencies]
 cc ="1.0"
+bindgen = "0.54.0"
+rustfmt = "0.10.0"

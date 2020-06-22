@@ -1,6 +1,19 @@
 extern crate cc;
+extern crate bindgen;
 
 fn main() {
+    // Generate Rust Bindings for C Library
+    let bindings = bindgen::Builder::default()
+        .header("./extern/src/sofa.h")
+        .rustfmt_bindings(true)
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .generate()
+        .expect("Unable to generate bindings");
+
+    bindings.write_to_file("./src/bindings.rs")
+        .expect("Unable to save bindings");
+
+    // Compile C library
     cc::Build::new()
         .include("./extern/src")
         .file("./extern/src/a2af.c")

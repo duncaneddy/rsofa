@@ -1,33 +1,62 @@
-use std::os::raw::{c_char, c_int, c_double};
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+#[allow(improper_ctypes)]
+include!("./bindings.rs");
+
+// Provide default constructors for SOFA types
+impl Default for iauASTROM {
+    fn default() -> iauASTROM {
+        iauASTROM {
+            pmt: 0.0,
+            eb: [0.0, 0.0, 0.0],
+            eh: [0.0, 0.0, 0.0],
+            em: 0.0,
+            v: [0.0, 0.0, 0.0],
+            bm1: 0.0,
+            bpn: [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+            along: 0.0,
+            phi: 0.0, 
+            xpl: 0.0,
+            ypl: 0.0,
+            sphi: 0.0,
+            cphi: 0.0,
+            diurab: 0.0,
+            eral: 0.0,
+            refa: 0.0,
+            refb: 0.0
+        }
+    }
+}
+
+impl Default for iauLDBODY {
+    fn default() -> iauLDBODY {
+        iauLDBODY {
+            bm: 0.0,
+            dl: 0.0, 
+            pv: [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+        }
+    }
+}
 
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
 
-#[allow(dead_code)]
-extern "C" {
-    fn iauA2af(ndp:i32, angle:f64, sign:*const c_char, idmsf: *const c_int);
-    fn iauA2tf(ndp:i32, angle:f64, sign:*const c_char, idmsf: *const c_int);
-    fn iauAb(pnat: *const c_double, v: *const c_double, s:f64, bm1: f64, ppr: *const c_double);
-    fn iauAe2hd (az:f64, el:f64, phi:f64, ha: *const c_double, dec: *const c_double);
-    fn iauAf2a(s:char, ideg:i32, iamin:i32, asec:f64, rad: *const c_double) -> i32;
-    fn iauAnp(a:f64) -> f64;
-    fn iauAnpm(a:f64) -> f64;
-}
-
 #[cfg(test)]
 mod tests {
     use std::ffi::CString;
+    use std::os::raw::c_char;
     use crate::*;
 
     #[test]
     fn test_a2af() {
-        let idmsf: [i32; 4] = [0, 0, 0, 0];
+        let mut idmsf: [i32; 4] = [0, 0, 0, 0];
         // let mut s:char;
-        let s = CString::new(" ").unwrap();
+        let mut s: i8 = 0;
 
         unsafe {
-            iauA2af(4, 2.345, s.as_ptr(), idmsf.as_ptr());
+            iauA2af(4, 2.345, &mut s, &mut idmsf[0]);
         }
 
         assert_eq!(idmsf[0], 134);
@@ -38,12 +67,12 @@ mod tests {
 
     #[test]
     fn test_a2tf() {
-        let idmsf: [i32; 4] = [0, 0, 0, 0];
+        let mut idmsf: [i32; 4] = [0, 0, 0, 0];
         // let mut s:char;
-        let s = CString::new(" ").unwrap();
+        let mut s:i8 = 0;
 
         unsafe {
-            iauA2tf(4, -3.01234, s.as_ptr(), idmsf.as_ptr());
+            iauA2tf(4, -3.01234, &mut s, &mut idmsf[0]);
         }
 
         assert_eq!(idmsf[0], 11);
@@ -55,20 +84,20 @@ mod tests {
     #[test]
     fn test_ab() {
 
-    let pnat = [-0.76321968546737951, -0.60869453983060384, -0.21676408580639883];
-    let v    = [2.1044018893653786e-5, -8.9108923304429319e-5, -3.8633714797716569e-5];
-    let s    = 0.99980921395708788;
-    let bm1  = 0.99999999506209258;
-    let ppr: [f64; 3] = [0.0, 0.0, 0.0];
+        let mut pnat = [-0.76321968546737951, -0.60869453983060384, -0.21676408580639883];
+        let mut v    = [2.1044018893653786e-5, -8.9108923304429319e-5, -3.8633714797716569e-5];
+        let s    = 0.99980921395708788;
+        let bm1  = 0.99999999506209258;
+        let mut ppr: [f64; 3] = [0.0, 0.0, 0.0];
 
-    unsafe {
-        iauAb(pnat.as_ptr(), v.as_ptr(), s, bm1, ppr.as_ptr());
-    }
+        unsafe {
+            iauAb(&mut pnat[0], &mut v[0], s, bm1, &mut ppr[0]);
+        }
 
-    abs_diff_eq!(ppr[0], -0.7631631094219556269, epsilon=1.0e-12);
-    abs_diff_eq!(ppr[1], -0.6087553082505590832, epsilon=1.0e-12);
-    abs_diff_eq!(ppr[2], -0.2167926269368471279, epsilon=1.0e-12);
-        
+        abs_diff_eq!(ppr[0], -0.7631631094219556269, epsilon=1.0e-12);
+        abs_diff_eq!(ppr[1], -0.6087553082505590832, epsilon=1.0e-12);
+        abs_diff_eq!(ppr[2], -0.2167926269368471279, epsilon=1.0e-12);
+            
     }
 
     #[test]
@@ -77,11 +106,11 @@ mod tests {
         let a = 5.5;
         let e = 1.1;
         let p = 0.7;
-        let h = 0.0;
-        let d = 0.0;
+        let mut h = 0.0;
+        let mut d = 0.0;
 
         unsafe {
-            iauAe2hd(a, e, p, &h, &d);
+            iauAe2hd(a, e, p, &mut h, &mut d);
         }
 
         abs_diff_eq!(h, 0.5933291115507309663, epsilon=1e-14);
@@ -92,12 +121,13 @@ mod tests {
     #[test]
     fn test_af2a() {
 
-        let a = 0.0;
+        let mut a = 0.0;
+        let s = '-' as i8;
 
         let j;
         
         unsafe {
-            j = iauAf2a('-', 45, 13, 27.2, &a);
+            j = iauAf2a(s, 45, 13, 27.2, &mut a);
         }
         
         abs_diff_eq!(a, -0.7893115794313644842, epsilon=1e-12);
@@ -118,422 +148,209 @@ mod tests {
             abs_diff_eq!(iauAnpm(-4.0), 2.283185307179586477, epsilon=1e-12);
         }
     }
-}
 
-// static void t_apcg(int *status)
-// /*
-// **  - - - - - - -
-// **   t _ a p c g
-// **  - - - - - - -
-// **
-// **  Test iauApcg function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauApcg, vvd
-// **
-// **  This revision:  2017 March 15
-// */
-// {
-//    double date1, date2, ebpv[2][3], ehp[3];
-//    iauASTROM astrom;
+    #[test]
+    fn test_apcg() {
+        let date1 = 2456165.5;
+        let date2 = 0.401182685;
+        let mut ebpv = [[0.901310875, -0.417402664, -0.180982288],
+                     [0.00742727954, 0.0140507459, 0.00609045792]];
+        let mut ehp = [0.903358544, -0.415395237, -0.180084014];
+        let mut astrom = iauASTROM {..Default::default()};
 
+        unsafe {
+            iauApcg(date1, date2, &mut ebpv[0], &mut ehp[0], &mut astrom);
+        }
 
-//    date1 = 2456165.5;
-//    date2 = 0.401182685;
-//    ebpv[0][0] =  0.901310875;
-//    ebpv[0][1] = -0.417402664;
-//    ebpv[0][2] = -0.180982288;
-//    ebpv[1][0] =  0.00742727954;
-//    ebpv[1][1] =  0.0140507459;
-//    ebpv[1][2] =  0.00609045792;
-//    ehp[0] =  0.903358544;
-//    ehp[1] = -0.415395237;
-//    ehp[2] = -0.180084014;
+        abs_diff_eq!(astrom.pmt, 12.65133794027378508, epsilon=1e-11);
+        abs_diff_eq!(astrom.eb[0], 0.901310875, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[1], -0.417402664, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[2], -0.180982288, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[0], 0.8940025429324143045, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[1], -0.4110930268679817955, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[2], -0.1782189004872870264, epsilon=1e-12);
+        abs_diff_eq!(astrom.em, 1.010465295811013146, epsilon=1e-12);
+        abs_diff_eq!(astrom.v[0], 0.4289638913597693554e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[1], 0.8115034051581320575e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[2], 0.3517555136380563427e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.bm1, 0.9999999951686012981, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][0], 1.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[1][0], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[2][0], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[0][1], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[1][1], 1.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[2][1], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[0][2], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[1][2], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[2][2], 1.0, epsilon=0.0);
+    }
 
-//    iauApcg(date1, date2, ebpv, ehp, &astrom);
+    #[test]
+    fn test_apcg13() {
+        let date1 = 2456165.5;
+        let date2 = 0.401182685;
+        let mut astrom = iauASTROM {..Default::default()};
 
-//    vvd(astrom.pmt, 12.65133794027378508, 1e-11,
-//                    "iauApcg", "pmt", status);
-//    vvd(astrom.eb[0], 0.901310875, 1e-12,
-//                      "iauApcg", "eb(1)", status);
-//    vvd(astrom.eb[1], -0.417402664, 1e-12,
-//                      "iauApcg", "eb(2)", status);
-//    vvd(astrom.eb[2], -0.180982288, 1e-12,
-//                      "iauApcg", "eb(3)", status);
-//    vvd(astrom.eh[0], 0.8940025429324143045, 1e-12,
-//                      "iauApcg", "eh(1)", status);
-//    vvd(astrom.eh[1], -0.4110930268679817955, 1e-12,
-//                      "iauApcg", "eh(2)", status);
-//    vvd(astrom.eh[2], -0.1782189004872870264, 1e-12,
-//                      "iauApcg", "eh(3)", status);
-//    vvd(astrom.em, 1.010465295811013146, 1e-12,
-//                   "iauApcg", "em", status);
-//    vvd(astrom.v[0], 0.4289638913597693554e-4, 1e-16,
-//                     "iauApcg", "v(1)", status);
-//    vvd(astrom.v[1], 0.8115034051581320575e-4, 1e-16,
-//                     "iauApcg", "v(2)", status);
-//    vvd(astrom.v[2], 0.3517555136380563427e-4, 1e-16,
-//                     "iauApcg", "v(3)", status);
-//    vvd(astrom.bm1, 0.9999999951686012981, 1e-12,
-//                    "iauApcg", "bm1", status);
-//    vvd(astrom.bpn[0][0], 1.0, 0.0,
-//                          "iauApcg", "bpn(1,1)", status);
-//    vvd(astrom.bpn[1][0], 0.0, 0.0,
-//                          "iauApcg", "bpn(2,1)", status);
-//    vvd(astrom.bpn[2][0], 0.0, 0.0,
-//                          "iauApcg", "bpn(3,1)", status);
-//    vvd(astrom.bpn[0][1], 0.0, 0.0,
-//                          "iauApcg", "bpn(1,2)", status);
-//    vvd(astrom.bpn[1][1], 1.0, 0.0,
-//                          "iauApcg", "bpn(2,2)", status);
-//    vvd(astrom.bpn[2][1], 0.0, 0.0,
-//                          "iauApcg", "bpn(3,2)", status);
-//    vvd(astrom.bpn[0][2], 0.0, 0.0,
-//                          "iauApcg", "bpn(1,3)", status);
-//    vvd(astrom.bpn[1][2], 0.0, 0.0,
-//                          "iauApcg", "bpn(2,3)", status);
-//    vvd(astrom.bpn[2][2], 1.0, 0.0,
-//                          "iauApcg", "bpn(3,3)", status);
+        unsafe {
+            iauApcg13(date1, date2, &mut astrom);
+        }
 
-// }
+        abs_diff_eq!(astrom.pmt, 12.65133794027378508, epsilon=1e-11);
+        abs_diff_eq!(astrom.eb[0], 0.9013108747340644755, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[1], -0.4174026640406119957, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[2], -0.1809822877867817771, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[0], 0.8940025429255499549, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[1], -0.4110930268331896318, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[2], -0.1782189006019749850, epsilon=1e-12);
+        abs_diff_eq!(astrom.em, 1.010465295964664178, epsilon=1e-12);
+        abs_diff_eq!(astrom.v[0], 0.4289638912941341125e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[1], 0.8115034032405042132e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[2], 0.3517555135536470279e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.bm1, 0.9999999951686013142, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][0], 1.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[1][0], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[2][0], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[0][1], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[1][1], 1.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[2][1], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[0][2], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[1][2], 0.0, epsilon=0.0);
+        abs_diff_eq!(astrom.bpn[2][2], 1.0, epsilon=0.0);
+    }
 
-// static void t_apcg13(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ a p c g 1 3
-// **  - - - - - - - - -
-// **
-// **  Test iauApcg13 function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauApcg13, vvd
-// **
-// **  This revision:  2017 March 15
-// */
-// {
-//    double date1, date2;
-//    iauASTROM astrom;
+    #[test]
+    fn test_apci() {
+        let date1 = 2456165.5;
+        let date2 = 0.401182685;
+        let mut ebpv = [[0.901310875, -0.417402664, -0.180982288],  
+                    [0.00742727954,  0.0140507459,  0.00609045792]];
+        let mut ehp = [0.903358544, -0.415395237, -0.180084014];
+        let x =  0.0013122272;
+        let y = -2.92808623e-5;
+        let s =  3.05749468e-8;
+        let mut astrom = iauASTROM {..Default::default()};
 
+        unsafe {
+            iauApci(date1, date2, &mut ebpv[0], &mut ehp[0], x, y, s, &mut astrom);
+        }
 
-//    date1 = 2456165.5;
-//    date2 = 0.401182685;
+        abs_diff_eq!(astrom.pmt, 12.65133794027378508, epsilon=1e-11);
+        abs_diff_eq!(astrom.eb[0], 0.901310875, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[1], -0.417402664, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[2], -0.180982288, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[0], 0.8940025429324143045, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[1], -0.4110930268679817955, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[2], -0.1782189004872870264, epsilon=1e-12);
+        abs_diff_eq!(astrom.em, 1.010465295811013146, epsilon=1e-12);
+        abs_diff_eq!(astrom.v[0], 0.4289638913597693554e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[1], 0.8115034051581320575e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[2], 0.3517555136380563427e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.bm1, 0.9999999951686012981, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][0], 0.9999991390295159156, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][0], 0.4978650072505016932e-7, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][0], 0.1312227200000000000e-2, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][1], -0.1136336653771609630e-7, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][1], 0.9999999995713154868, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][1], -0.2928086230000000000e-4, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][2], -0.1312227200895260194e-2, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][2], 0.2928082217872315680e-4, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][2], 0.9999991386008323373, epsilon=1e-12);
+    }
 
-//    iauApcg13(date1, date2, &astrom);
+    #[test]
+    fn test_apci13() {
+        let date1 = 2456165.5;
+        let date2 = 0.401182685;
+        let mut astrom = iauASTROM {..Default::default()};
+        let mut eo = 0.0;
 
-//    vvd(astrom.pmt, 12.65133794027378508, 1e-11,
-//                    "iauApcg13", "pmt", status);
-//    vvd(astrom.eb[0], 0.9013108747340644755, 1e-12,
-//                    "iauApcg13", "eb(1)", status);
-//    vvd(astrom.eb[1], -0.4174026640406119957, 1e-12,
-//                    "iauApcg13", "eb(2)", status);
-//    vvd(astrom.eb[2], -0.1809822877867817771, 1e-12,
-//                    "iauApcg13", "eb(3)", status);
-//    vvd(astrom.eh[0], 0.8940025429255499549, 1e-12,
-//                    "iauApcg13", "eh(1)", status);
-//    vvd(astrom.eh[1], -0.4110930268331896318, 1e-12,
-//                    "iauApcg13", "eh(2)", status);
-//    vvd(astrom.eh[2], -0.1782189006019749850, 1e-12,
-//                    "iauApcg13", "eh(3)", status);
-//    vvd(astrom.em, 1.010465295964664178, 1e-12,
-//                    "iauApcg13", "em", status);
-//    vvd(astrom.v[0], 0.4289638912941341125e-4, 1e-16,
-//                    "iauApcg13", "v(1)", status);
-//    vvd(astrom.v[1], 0.8115034032405042132e-4, 1e-16,
-//                    "iauApcg13", "v(2)", status);
-//    vvd(astrom.v[2], 0.3517555135536470279e-4, 1e-16,
-//                    "iauApcg13", "v(3)", status);
-//    vvd(astrom.bm1, 0.9999999951686013142, 1e-12,
-//                    "iauApcg13", "bm1", status);
-//    vvd(astrom.bpn[0][0], 1.0, 0.0,
-//                          "iauApcg13", "bpn(1,1)", status);
-//    vvd(astrom.bpn[1][0], 0.0, 0.0,
-//                          "iauApcg13", "bpn(2,1)", status);
-//    vvd(astrom.bpn[2][0], 0.0, 0.0,
-//                          "iauApcg13", "bpn(3,1)", status);
-//    vvd(astrom.bpn[0][1], 0.0, 0.0,
-//                          "iauApcg13", "bpn(1,2)", status);
-//    vvd(astrom.bpn[1][1], 1.0, 0.0,
-//                          "iauApcg13", "bpn(2,2)", status);
-//    vvd(astrom.bpn[2][1], 0.0, 0.0,
-//                          "iauApcg13", "bpn(3,2)", status);
-//    vvd(astrom.bpn[0][2], 0.0, 0.0,
-//                          "iauApcg13", "bpn(1,3)", status);
-//    vvd(astrom.bpn[1][2], 0.0, 0.0,
-//                          "iauApcg13", "bpn(2,3)", status);
-//    vvd(astrom.bpn[2][2], 1.0, 0.0,
-//                          "iauApcg13", "bpn(3,3)", status);
+        unsafe {
+            iauApci13(date1, date2, &mut astrom, &mut eo);
+        }
 
-// }
+        abs_diff_eq!(astrom.pmt, 12.65133794027378508, epsilon=1e-11);
+        abs_diff_eq!(astrom.eb[0], 0.9013108747340644755, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[1], -0.4174026640406119957, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[2], -0.1809822877867817771, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[0], 0.8940025429255499549, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[1], -0.4110930268331896318, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[2], -0.1782189006019749850, epsilon=1e-12);
+        abs_diff_eq!(astrom.em, 1.010465295964664178, epsilon=1e-12);
+        abs_diff_eq!(astrom.v[0], 0.4289638912941341125e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[1], 0.8115034032405042132e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[2], 0.3517555135536470279e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.bm1, 0.9999999951686013142, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][0], 0.9999992060376761710, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][0], 0.4124244860106037157e-7, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][0], 0.1260128571051709670e-2, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][1], -0.1282291987222130690e-7, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][1], 0.9999999997456835325, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][1], -0.2255288829420524935e-4, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][2], -0.1260128571661374559e-2, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][2], 0.2255285422953395494e-4, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][2], 0.9999992057833604343, epsilon=1e-12);
+        abs_diff_eq!(eo, -0.2900618712657375647e-2, epsilon=1e-12);
+    }
 
-// static void t_apci(int *status)
-// /*
-// **  - - - - - - -
-// **   t _ a p c i
-// **  - - - - - - -
-// **
-// **  Test iauApci function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauApci, vvd
-// **
-// **  This revision:  2017 March 15
-// */
-// {
-//    double date1, date2, ebpv[2][3], ehp[3], x, y, s;
-//    iauASTROM astrom;
+    #[test]
+    fn test_apco() {
+        let date1 = 2456384.5;
+        let date2 = 0.970031644;
+        let mut ebpv = [[-0.974170438, -0.211520082, -0.0917583024],
+                    [0.00364365824, -0.0154287319, -0.00668922024]];
+        let mut ehp = [-0.973458265, -0.209215307, -0.0906996477];
+        let x = 0.0013122272;
+        let y = -2.92808623e-5;
+        let s = 3.05749468e-8;
+        let theta = 3.14540971;
+        let elong = -0.527800806;
+        let phi = -1.2345856;
+        let hm = 2738.0;
+        let xp = 2.47230737e-7;
+        let yp = 1.82640464e-6;
+        let sp = -3.01974337e-11;
+        let refa = 0.000201418779;
+        let refb = -2.36140831e-7;
+        let mut astrom = iauASTROM {..Default::default()};
 
+        unsafe {
+            iauApco(date1, date2, &mut ebpv[0], &mut ehp[0], x, y, s,
+                theta, elong, phi, hm, xp, yp, sp,
+                refa, refb, &mut astrom);
+        }
+        
 
-//    date1 = 2456165.5;
-//    date2 = 0.401182685;
-//    ebpv[0][0] =  0.901310875;
-//    ebpv[0][1] = -0.417402664;
-//    ebpv[0][2] = -0.180982288;
-//    ebpv[1][0] =  0.00742727954;
-//    ebpv[1][1] =  0.0140507459;
-//    ebpv[1][2] =  0.00609045792;
-//    ehp[0] =  0.903358544;
-//    ehp[1] = -0.415395237;
-//    ehp[2] = -0.180084014;
-//    x =  0.0013122272;
-//    y = -2.92808623e-5;
-//    s =  3.05749468e-8;
-
-//    iauApci(date1, date2, ebpv, ehp, x, y, s, &astrom);
-
-//    vvd(astrom.pmt, 12.65133794027378508, 1e-11,
-//                    "iauApci", "pmt", status);
-//    vvd(astrom.eb[0], 0.901310875, 1e-12,
-//                      "iauApci", "eb(1)", status);
-//    vvd(astrom.eb[1], -0.417402664, 1e-12,
-//                      "iauApci", "eb(2)", status);
-//    vvd(astrom.eb[2], -0.180982288, 1e-12,
-//                      "iauApci", "eb(3)", status);
-//    vvd(astrom.eh[0], 0.8940025429324143045, 1e-12,
-//                      "iauApci", "eh(1)", status);
-//    vvd(astrom.eh[1], -0.4110930268679817955, 1e-12,
-//                      "iauApci", "eh(2)", status);
-//    vvd(astrom.eh[2], -0.1782189004872870264, 1e-12,
-//                      "iauApci", "eh(3)", status);
-//    vvd(astrom.em, 1.010465295811013146, 1e-12,
-//                   "iauApci", "em", status);
-//    vvd(astrom.v[0], 0.4289638913597693554e-4, 1e-16,
-//                     "iauApci", "v(1)", status);
-//    vvd(astrom.v[1], 0.8115034051581320575e-4, 1e-16,
-//                     "iauApci", "v(2)", status);
-//    vvd(astrom.v[2], 0.3517555136380563427e-4, 1e-16,
-//                     "iauApci", "v(3)", status);
-//    vvd(astrom.bm1, 0.9999999951686012981, 1e-12,
-//                    "iauApci", "bm1", status);
-//    vvd(astrom.bpn[0][0], 0.9999991390295159156, 1e-12,
-//                          "iauApci", "bpn(1,1)", status);
-//    vvd(astrom.bpn[1][0], 0.4978650072505016932e-7, 1e-12,
-//                          "iauApci", "bpn(2,1)", status);
-//    vvd(astrom.bpn[2][0], 0.1312227200000000000e-2, 1e-12,
-//                          "iauApci", "bpn(3,1)", status);
-//    vvd(astrom.bpn[0][1], -0.1136336653771609630e-7, 1e-12,
-//                          "iauApci", "bpn(1,2)", status);
-//    vvd(astrom.bpn[1][1], 0.9999999995713154868, 1e-12,
-//                          "iauApci", "bpn(2,2)", status);
-//    vvd(astrom.bpn[2][1], -0.2928086230000000000e-4, 1e-12,
-//                          "iauApci", "bpn(3,2)", status);
-//    vvd(astrom.bpn[0][2], -0.1312227200895260194e-2, 1e-12,
-//                          "iauApci", "bpn(1,3)", status);
-//    vvd(astrom.bpn[1][2], 0.2928082217872315680e-4, 1e-12,
-//                          "iauApci", "bpn(2,3)", status);
-//    vvd(astrom.bpn[2][2], 0.9999991386008323373, 1e-12,
-//                          "iauApci", "bpn(3,3)", status);
-
-// }
-
-// static void t_apci13(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ a p c i 1 3
-// **  - - - - - - - - -
-// **
-// **  Test iauApci13 function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauApci13, vvd
-// **
-// **  This revision:  2017 March 15
-// */
-// {
-//    double date1, date2, eo;
-//    iauASTROM astrom;
-
-
-//    date1 = 2456165.5;
-//    date2 = 0.401182685;
-
-//    iauApci13(date1, date2, &astrom, &eo);
-
-//    vvd(astrom.pmt, 12.65133794027378508, 1e-11,
-//                    "iauApci13", "pmt", status);
-//    vvd(astrom.eb[0], 0.9013108747340644755, 1e-12,
-//                      "iauApci13", "eb(1)", status);
-//    vvd(astrom.eb[1], -0.4174026640406119957, 1e-12,
-//                      "iauApci13", "eb(2)", status);
-//    vvd(astrom.eb[2], -0.1809822877867817771, 1e-12,
-//                      "iauApci13", "eb(3)", status);
-//    vvd(astrom.eh[0], 0.8940025429255499549, 1e-12,
-//                      "iauApci13", "eh(1)", status);
-//    vvd(astrom.eh[1], -0.4110930268331896318, 1e-12,
-//                      "iauApci13", "eh(2)", status);
-//    vvd(astrom.eh[2], -0.1782189006019749850, 1e-12,
-//                      "iauApci13", "eh(3)", status);
-//    vvd(astrom.em, 1.010465295964664178, 1e-12,
-//                   "iauApci13", "em", status);
-//    vvd(astrom.v[0], 0.4289638912941341125e-4, 1e-16,
-//                     "iauApci13", "v(1)", status);
-//    vvd(astrom.v[1], 0.8115034032405042132e-4, 1e-16,
-//                     "iauApci13", "v(2)", status);
-//    vvd(astrom.v[2], 0.3517555135536470279e-4, 1e-16,
-//                     "iauApci13", "v(3)", status);
-//    vvd(astrom.bm1, 0.9999999951686013142, 1e-12,
-//                    "iauApci13", "bm1", status);
-//    vvd(astrom.bpn[0][0], 0.9999992060376761710, 1e-12,
-//                          "iauApci13", "bpn(1,1)", status);
-//    vvd(astrom.bpn[1][0], 0.4124244860106037157e-7, 1e-12,
-//                          "iauApci13", "bpn(2,1)", status);
-//    vvd(astrom.bpn[2][0], 0.1260128571051709670e-2, 1e-12,
-//                          "iauApci13", "bpn(3,1)", status);
-//    vvd(astrom.bpn[0][1], -0.1282291987222130690e-7, 1e-12,
-//                          "iauApci13", "bpn(1,2)", status);
-//    vvd(astrom.bpn[1][1], 0.9999999997456835325, 1e-12,
-//                          "iauApci13", "bpn(2,2)", status);
-//    vvd(astrom.bpn[2][1], -0.2255288829420524935e-4, 1e-12,
-//                          "iauApci13", "bpn(3,2)", status);
-//    vvd(astrom.bpn[0][2], -0.1260128571661374559e-2, 1e-12,
-//                          "iauApci13", "bpn(1,3)", status);
-//    vvd(astrom.bpn[1][2], 0.2255285422953395494e-4, 1e-12,
-//                          "iauApci13", "bpn(2,3)", status);
-//    vvd(astrom.bpn[2][2], 0.9999992057833604343, 1e-12,
-//                          "iauApci13", "bpn(3,3)", status);
-//    vvd(eo, -0.2900618712657375647e-2, 1e-12,
-//            "iauApci13", "eo", status);
-
-// }
-
-// static void t_apco(int *status)
-// /*
-// **  - - - - - - -
-// **   t _ a p c o
-// **  - - - - - - -
-// **
-// **  Test iauApco function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauApco, vvd
-// **
-// **  This revision:  2017 March 15
-// */
-// {
-//    double date1, date2, ebpv[2][3], ehp[3], x, y, s,
-//           theta, elong, phi, hm, xp, yp, sp, refa, refb;
-//    iauASTROM astrom;
-
-
-//    date1 = 2456384.5;
-//    date2 = 0.970031644;
-//    ebpv[0][0] = -0.974170438;
-//    ebpv[0][1] = -0.211520082;
-//    ebpv[0][2] = -0.0917583024;
-//    ebpv[1][0] = 0.00364365824;
-//    ebpv[1][1] = -0.0154287319;
-//    ebpv[1][2] = -0.00668922024;
-//    ehp[0] = -0.973458265;
-//    ehp[1] = -0.209215307;
-//    ehp[2] = -0.0906996477;
-//    x = 0.0013122272;
-//    y = -2.92808623e-5;
-//    s = 3.05749468e-8;
-//    theta = 3.14540971;
-//    elong = -0.527800806;
-//    phi = -1.2345856;
-//    hm = 2738.0;
-//    xp = 2.47230737e-7;
-//    yp = 1.82640464e-6;
-//    sp = -3.01974337e-11;
-//    refa = 0.000201418779;
-//    refb = -2.36140831e-7;
-
-//    iauApco(date1, date2, ebpv, ehp, x, y, s,
-//            theta, elong, phi, hm, xp, yp, sp,
-//            refa, refb, &astrom);
-
-//    vvd(astrom.pmt, 13.25248468622587269, 1e-11,
-//                    "iauApco", "pmt", status);
-//    vvd(astrom.eb[0], -0.9741827110630322720, 1e-12,
-//                      "iauApco", "eb(1)", status);
-//    vvd(astrom.eb[1], -0.2115130190135344832, 1e-12,
-//                      "iauApco", "eb(2)", status);
-//    vvd(astrom.eb[2], -0.09179840186949532298, 1e-12,
-//                      "iauApco", "eb(3)", status);
-//    vvd(astrom.eh[0], -0.9736425571689739035, 1e-12,
-//                      "iauApco", "eh(1)", status);
-//    vvd(astrom.eh[1], -0.2092452125849330936, 1e-12,
-//                      "iauApco", "eh(2)", status);
-//    vvd(astrom.eh[2], -0.09075578152243272599, 1e-12,
-//                      "iauApco", "eh(3)", status);
-//    vvd(astrom.em, 0.9998233241709957653, 1e-12,
-//                   "iauApco", "em", status);
-//    vvd(astrom.v[0], 0.2078704992916728762e-4, 1e-16,
-//                     "iauApco", "v(1)", status);
-//    vvd(astrom.v[1], -0.8955360107151952319e-4, 1e-16,
-//                     "iauApco", "v(2)", status);
-//    vvd(astrom.v[2], -0.3863338994288951082e-4, 1e-16,
-//                     "iauApco", "v(3)", status);
-//    vvd(astrom.bm1, 0.9999999950277561236, 1e-12,
-//                    "iauApco", "bm1", status);
-//    vvd(astrom.bpn[0][0], 0.9999991390295159156, 1e-12,
-//                          "iauApco", "bpn(1,1)", status);
-//    vvd(astrom.bpn[1][0], 0.4978650072505016932e-7, 1e-12,
-//                          "iauApco", "bpn(2,1)", status);
-//    vvd(astrom.bpn[2][0], 0.1312227200000000000e-2, 1e-12,
-//                          "iauApco", "bpn(3,1)", status);
-//    vvd(astrom.bpn[0][1], -0.1136336653771609630e-7, 1e-12,
-//                          "iauApco", "bpn(1,2)", status);
-//    vvd(astrom.bpn[1][1], 0.9999999995713154868, 1e-12,
-//                          "iauApco", "bpn(2,2)", status);
-//    vvd(astrom.bpn[2][1], -0.2928086230000000000e-4, 1e-12,
-//                          "iauApco", "bpn(3,2)", status);
-//    vvd(astrom.bpn[0][2], -0.1312227200895260194e-2, 1e-12,
-//                          "iauApco", "bpn(1,3)", status);
-//    vvd(astrom.bpn[1][2], 0.2928082217872315680e-4, 1e-12,
-//                          "iauApco", "bpn(2,3)", status);
-//    vvd(astrom.bpn[2][2], 0.9999991386008323373, 1e-12,
-//                          "iauApco", "bpn(3,3)", status);
-//    vvd(astrom.along, -0.5278008060301974337, 1e-12,
-//                      "iauApco", "along", status);
-//    vvd(astrom.xpl, 0.1133427418174939329e-5, 1e-17,
-//                    "iauApco", "xpl", status);
-//    vvd(astrom.ypl, 0.1453347595745898629e-5, 1e-17,
-//                    "iauApco", "ypl", status);
-//    vvd(astrom.sphi, -0.9440115679003211329, 1e-12,
-//                     "iauApco", "sphi", status);
-//    vvd(astrom.cphi, 0.3299123514971474711, 1e-12,
-//                     "iauApco", "cphi", status);
-//    vvd(astrom.diurab, 0, 0,
-//                       "iauApco", "diurab", status);
-//    vvd(astrom.eral, 2.617608903969802566, 1e-12,
-//                     "iauApco", "eral", status);
-//    vvd(astrom.refa, 0.2014187790000000000e-3, 1e-15,
-//                     "iauApco", "refa", status);
-//    vvd(astrom.refb, -0.2361408310000000000e-6, 1e-18,
-//                     "iauApco", "refb", status);
-
-// }
+        abs_diff_eq!(astrom.pmt, 13.25248468622587269, epsilon=1e-11);
+        abs_diff_eq!(astrom.eb[0], -0.9741827110630322720, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[1], -0.2115130190135344832, epsilon=1e-12);
+        abs_diff_eq!(astrom.eb[2], -0.09179840186949532298, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[0], -0.9736425571689739035, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[1], -0.2092452125849330936, epsilon=1e-12);
+        abs_diff_eq!(astrom.eh[2], -0.09075578152243272599, epsilon=1e-12);
+        abs_diff_eq!(astrom.em, 0.9998233241709957653, epsilon=1e-12);
+        abs_diff_eq!(astrom.v[0], 0.2078704992916728762e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[1], -0.8955360107151952319e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.v[2], -0.3863338994288951082e-4, epsilon=1e-16);
+        abs_diff_eq!(astrom.bm1, 0.9999999950277561236, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][0], 0.9999991390295159156, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][0], 0.4978650072505016932e-7, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][0], 0.1312227200000000000e-2, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][1], -0.1136336653771609630e-7, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][1], 0.9999999995713154868, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][1], -0.2928086230000000000e-4, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[0][2], -0.1312227200895260194e-2, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[1][2], 0.2928082217872315680e-4, epsilon=1e-12);
+        abs_diff_eq!(astrom.bpn[2][2], 0.9999991386008323373, epsilon=1e-12);
+        abs_diff_eq!(astrom.along, -0.5278008060301974337, epsilon=1e-12);
+        abs_diff_eq!(astrom.xpl, 0.1133427418174939329e-5, epsilon=1e-17);
+        abs_diff_eq!(astrom.ypl, 0.1453347595745898629e-5, epsilon=1e-17);
+        abs_diff_eq!(astrom.sphi, -0.9440115679003211329, epsilon=1e-12);
+        abs_diff_eq!(astrom.cphi, 0.3299123514971474711, epsilon=1e-12);
+        assert_eq!(astrom.diurab, 0.0);
+        abs_diff_eq!(astrom.eral, 2.617608903969802566, epsilon=1e-12);
+        abs_diff_eq!(astrom.refa, 0.2014187790000000000e-3, epsilon=1e-15);
+        abs_diff_eq!(astrom.refb, -0.2361408310000000000e-6, epsilon=1e-18);
+    }
 
 // static void t_apco13(int *status)
 // /*
@@ -2807,7 +2624,7 @@ mod tests {
 //    double dtdb;
 
 
-//    dtdb = iauDtdb(2448939.5, 0.123, 0.76543, 5.0123, 5525.242, 3190.0);
+//    dtdb = iauDtdb(2448939.5, 0.123, 0.76543, 5.0123, 5525.242, 319epsilon=0.0);
 
 //    vvd(dtdb, -0.1280368005936998991e-2, 1e-15, "iauDtdb", "", status);
 
@@ -9022,689 +8839,380 @@ mod tests {
 
 // }
 
-// static void t_tpxes(int *status)
-// /*
-// **  - - - - - - - -
-// **   t _ t p x e s
-// **  - - - - - - - -
-// **
-// **  Test iauTpxes function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTpxes, vvd, viv
-// **
-// **  This revision:  2017 October 21
-// */
-// {
-//    double ra, dec, raz, decz, xi, eta;
-//    int j;
-
-
-//    ra = 1.3;
-//    dec = 1.55;
-//    raz = 2.3;
-//    decz = 1.5;
-
-//    j = iauTpxes(ra, dec, raz, decz, &xi, &eta);
-
-//    vvd(xi, -0.01753200983236980595, 1e-15, "iauTpxes", "xi", status);
-//    vvd(eta, 0.05962940005778712891, 1e-15, "iauTpxes", "eta", status);
-
-//    viv(j, 0, "iauTpxes", "j", status);
-
-// }
-
-// static void t_tpxev(int *status)
-// /*
-// **  - - - - - - - -
-// **   t _ t p x e v
-// **  - - - - - - - -
-// **
-// **  Test iauTpxev function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTpxev, iauS2c, vvd
-// **
-// **  This revision:  2017 October 21
-// */
-// {
-//    double ra, dec, raz, decz, v[3], vz[3], xi, eta;
-//    int j;
-
-
-//    ra = 1.3;
-//    dec = 1.55;
-//    raz = 2.3;
-//    decz = 1.5;
-//    iauS2c(ra, dec, v);
-//    iauS2c(raz, decz, vz);
-
-//    j = iauTpxev(v, vz, &xi, &eta);
-
-//    vvd(xi, -0.01753200983236980595, 1e-15, "iauTpxev", "xi", status);
-//    vvd(eta, 0.05962940005778712891, 1e-15, "iauTpxev", "eta", status);
-
-//    viv(j, 0, "iauTpxev", "j", status);
-
-// }
-
-// static void t_tr(int *status)
-// /*
-// **  - - - - -
-// **   t _ t r
-// **  - - - - -
-// **
-// **  Test iauTr function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTr, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double r[3][3], rt[3][3];
-
-
-//    r[0][0] = 2.0;
-//    r[0][1] = 3.0;
-//    r[0][2] = 2.0;
-
-//    r[1][0] = 3.0;
-//    r[1][1] = 2.0;
-//    r[1][2] = 3.0;
-
-//    r[2][0] = 3.0;
-//    r[2][1] = 4.0;
-//    r[2][2] = 5.0;
-
-//    iauTr(r, rt);
-
-//    vvd(rt[0][0], 2.0, 0.0, "iauTr", "11", status);
-//    vvd(rt[0][1], 3.0, 0.0, "iauTr", "12", status);
-//    vvd(rt[0][2], 3.0, 0.0, "iauTr", "13", status);
-
-//    vvd(rt[1][0], 3.0, 0.0, "iauTr", "21", status);
-//    vvd(rt[1][1], 2.0, 0.0, "iauTr", "22", status);
-//    vvd(rt[1][2], 4.0, 0.0, "iauTr", "23", status);
-
-//    vvd(rt[2][0], 2.0, 0.0, "iauTr", "31", status);
-//    vvd(rt[2][1], 3.0, 0.0, "iauTr", "32", status);
-//    vvd(rt[2][2], 5.0, 0.0, "iauTr", "33", status);
-
-// }
-
-// static void t_trxp(int *status)
-// /*
-// **  - - - - - - -
-// **   t _ t r x p
-// **  - - - - - - -
-// **
-// **  Test iauTrxp function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTrxp, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double r[3][3], p[3], trp[3];
-
-
-//    r[0][0] = 2.0;
-//    r[0][1] = 3.0;
-//    r[0][2] = 2.0;
-
-//    r[1][0] = 3.0;
-//    r[1][1] = 2.0;
-//    r[1][2] = 3.0;
-
-//    r[2][0] = 3.0;
-//    r[2][1] = 4.0;
-//    r[2][2] = 5.0;
-
-//    p[0] = 0.2;
-//    p[1] = 1.5;
-//    p[2] = 0.1;
-
-//    iauTrxp(r, p, trp);
-
-//    vvd(trp[0], 5.2, 1e-12, "iauTrxp", "1", status);
-//    vvd(trp[1], 4.0, 1e-12, "iauTrxp", "2", status);
-//    vvd(trp[2], 5.4, 1e-12, "iauTrxp", "3", status);
-
-// }
-
-// static void t_trxpv(int *status)
-// /*
-// **  - - - - - - - -
-// **   t _ t r x p v
-// **  - - - - - - - -
-// **
-// **  Test iauTrxpv function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTrxpv, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double r[3][3], pv[2][3], trpv[2][3];
-
-
-//    r[0][0] = 2.0;
-//    r[0][1] = 3.0;
-//    r[0][2] = 2.0;
-
-//    r[1][0] = 3.0;
-//    r[1][1] = 2.0;
-//    r[1][2] = 3.0;
-
-//    r[2][0] = 3.0;
-//    r[2][1] = 4.0;
-//    r[2][2] = 5.0;
-
-//    pv[0][0] = 0.2;
-//    pv[0][1] = 1.5;
-//    pv[0][2] = 0.1;
-
-//    pv[1][0] = 1.5;
-//    pv[1][1] = 0.2;
-//    pv[1][2] = 0.1;
-
-//    iauTrxpv(r, pv, trpv);
-
-//    vvd(trpv[0][0], 5.2, 1e-12, "iauTrxpv", "p1", status);
-//    vvd(trpv[0][1], 4.0, 1e-12, "iauTrxpv", "p1", status);
-//    vvd(trpv[0][2], 5.4, 1e-12, "iauTrxpv", "p1", status);
-
-//    vvd(trpv[1][0], 3.9, 1e-12, "iauTrxpv", "v1", status);
-//    vvd(trpv[1][1], 5.3, 1e-12, "iauTrxpv", "v2", status);
-//    vvd(trpv[1][2], 4.1, 1e-12, "iauTrxpv", "v3", status);
-
-// }
-
-// static void t_tttai(int *status)
-// /*
-// **  - - - - - - - -
-// **   t _ t t t a i
-// **  - - - - - - - -
-// **
-// **  Test iauTttai function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTttai, vvd, viv
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double a1, a2;
-//    int j;
-
-
-//    j = iauTttai(2453750.5, 0.892482639, &a1, &a2);
-
-//    vvd(a1, 2453750.5, 1e-6, "iauTttai", "a1", status);
-//    vvd(a2, 0.892110139, 1e-12, "iauTttai", "a2", status);
-//    viv(j, 0, "iauTttai", "j", status);
-
-// }
-
-// static void t_tttcg(int *status)
-// /*
-// **  - - - - - - - -
-// **   t _ t t t c g
-// **  - - - - - - - -
-// **
-// **  Test iauTttcg function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTttcg, vvd, viv
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double g1, g2;
-//    int j;
-
-
-//    j = iauTttcg(2453750.5, 0.892482639, &g1, &g2);
-
-//    vvd( g1, 2453750.5, 1e-6, "iauTttcg", "g1", status);
-//    vvd( g2, 0.8924900312508587113, 1e-12, "iauTttcg", "g2", status);
-//    viv(j, 0, "iauTttcg", "j", status);
-
-// }
-
-// static void t_tttdb(int *status)
-// /*
-// **  - - - - - - - -
-// **   t _ t t t d b
-// **  - - - - - - - -
-// **
-// **  Test iauTttdb function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTttdb, vvd, viv
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double b1, b2;
-//    int j;
-
-
-//    j = iauTttdb(2453750.5, 0.892855139, -0.000201, &b1, &b2);
-
-//    vvd(b1, 2453750.5, 1e-6, "iauTttdb", "b1", status);
-//    vvd(b2, 0.8928551366736111111, 1e-12, "iauTttdb", "b2", status);
-//    viv(j, 0, "iauTttdb", "j", status);
-
-// }
-
-// static void t_ttut1(int *status)
-// /*
-// **  - - - - - - - -
-// **   t _ t t u t 1
-// **  - - - - - - - -
-// **
-// **  Test iauTtut1 function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauTtut1, vvd, viv
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double u1, u2;
-//    int j;
-
-
-//    j = iauTtut1(2453750.5, 0.892855139, 64.8499, &u1, &u2);
-
-//    vvd(u1, 2453750.5, 1e-6, "iauTtut1", "u1", status);
-//    vvd(u2, 0.8921045614537037037, 1e-12, "iauTtut1", "u2", status);
-//    viv(j, 0, "iauTtut1", "j", status);
-
-// }
-
-// static void t_ut1tai(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ u t 1 t a i
-// **  - - - - - - - - -
-// **
-// **  Test iauUt1tai function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauUt1tai, vvd, viv
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double a1, a2;
-//    int j;
-
-
-//    j = iauUt1tai(2453750.5, 0.892104561, -32.6659, &a1, &a2);
-
-//    vvd(a1, 2453750.5, 1e-6, "iauUt1tai", "a1", status);
-//    vvd(a2, 0.8924826385462962963, 1e-12, "iauUt1tai", "a2", status);
-//    viv(j, 0, "iauUt1tai", "j", status);
-
-// }
-
-// static void t_ut1tt(int *status)
-// /*
-// **  - - - - - - - -
-// **   t _ u t 1 t t
-// **  - - - - - - - -
-// **
-// **  Test iauUt1tt function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauUt1tt, vvd, viv
-// **
-// **  This revision:  2013 October 3
-// */
-// {
-//    double t1, t2;
-//    int j;
-
-
-//    j = iauUt1tt(2453750.5, 0.892104561, 64.8499, &t1, &t2);
-
-//    vvd(t1, 2453750.5, 1e-6, "iauUt1tt", "t1", status);
-//    vvd(t2, 0.8928551385462962963, 1e-12, "iauUt1tt", "t2", status);
-//    viv(j, 0, "iauUt1tt", "j", status);
-
-// }
-
-// static void t_ut1utc(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ u t 1 u t c
-// **  - - - - - - - - -
-// **
-// **  Test iauUt1utc function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauUt1utc, vvd, viv
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double u1, u2;
-//    int j;
-
-
-//    j = iauUt1utc(2453750.5, 0.892104561, 0.3341, &u1, &u2);
-
-//    vvd(u1, 2453750.5, 1e-6, "iauUt1utc", "u1", status);
-//    vvd(u2, 0.8921006941018518519, 1e-12, "iauUt1utc", "u2", status);
-//    viv(j, 0, "iauUt1utc", "j", status);
-
-// }
-
-// static void t_utctai(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ u t c t a i
-// **  - - - - - - - - -
-// **
-// **  Test iauUtctai function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauUtctai, vvd, viv
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double u1, u2;
-//    int j;
-
-
-//    j = iauUtctai(2453750.5, 0.892100694, &u1, &u2);
-
-//    vvd(u1, 2453750.5, 1e-6, "iauUtctai", "u1", status);
-//    vvd(u2, 0.8924826384444444444, 1e-12, "iauUtctai", "u2", status);
-//    viv(j, 0, "iauUtctai", "j", status);
-
-// }
-
-// static void t_utcut1(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ u t c u t 1
-// **  - - - - - - - - -
-// **
-// **  Test iauUtcut1 function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauUtcut1, vvd, viv
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double u1, u2;
-//    int j;
-
-
-//    j = iauUtcut1(2453750.5, 0.892100694, 0.3341, &u1, &u2);
-
-//    vvd(u1, 2453750.5, 1e-6, "iauUtcut1", "u1", status);
-//    vvd(u2, 0.8921045608981481481, 1e-12, "iauUtcut1", "u2", status);
-//    viv(j, 0, "iauUtcut1", "j", status);
-
-// }
-
-// static void t_xy06(int *status)
-// /*
-// **  - - - - - - -
-// **   t _ x y 0 6
-// **  - - - - - - -
-// **
-// **  Test iauXy06 function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauXy06, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double x, y;
-
-
-//    iauXy06(2400000.5, 53736.0, &x, &y);
-
-//    vvd(x, 0.5791308486706010975e-3, 1e-15, "iauXy06", "x", status);
-//    vvd(y, 0.4020579816732958141e-4, 1e-16, "iauXy06", "y", status);
-
-// }
-
-// static void t_xys00a(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ x y s 0 0 a
-// **  - - - - - - - - -
-// **
-// **  Test iauXys00a function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauXys00a, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double x, y, s;
-
-
-//    iauXys00a(2400000.5, 53736.0, &x, &y, &s);
-
-//    vvd(x,  0.5791308472168152904e-3, 1e-14, "iauXys00a", "x", status);
-//    vvd(y,  0.4020595661591500259e-4, 1e-15, "iauXys00a", "y", status);
-//    vvd(s, -0.1220040848471549623e-7, 1e-18, "iauXys00a", "s", status);
-
-// }
-
-// static void t_xys00b(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ x y s 0 0 b
-// **  - - - - - - - - -
-// **
-// **  Test iauXys00b function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauXys00b, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double x, y, s;
-
-
-//    iauXys00b(2400000.5, 53736.0, &x, &y, &s);
-
-//    vvd(x,  0.5791301929950208873e-3, 1e-14, "iauXys00b", "x", status);
-//    vvd(y,  0.4020553681373720832e-4, 1e-15, "iauXys00b", "y", status);
-//    vvd(s, -0.1220027377285083189e-7, 1e-18, "iauXys00b", "s", status);
-
-// }
-
-// static void t_xys06a(int *status)
-// /*
-// **  - - - - - - - - -
-// **   t _ x y s 0 6 a
-// **  - - - - - - - - -
-// **
-// **  Test iauXys06a function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauXys06a, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double x, y, s;
-
-
-//    iauXys06a(2400000.5, 53736.0, &x, &y, &s);
-
-//    vvd(x,  0.5791308482835292617e-3, 1e-14, "iauXys06a", "x", status);
-//    vvd(y,  0.4020580099454020310e-4, 1e-15, "iauXys06a", "y", status);
-//    vvd(s, -0.1220032294164579896e-7, 1e-18, "iauXys06a", "s", status);
-
-// }
-
-// static void t_zp(int *status)
-// /*
-// **  - - - - -
-// **   t _ z p
-// **  - - - - -
-// **
-// **  Test iauZp function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauZp, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double p[3];
-
-
-//    p[0] =  0.3;
-//    p[1] =  1.2;
-//    p[2] = -2.5;
-
-//    iauZp(p);
-
-//    vvd(p[0], 0.0, 0.0, "iauZp", "1", status);
-//    vvd(p[1], 0.0, 0.0, "iauZp", "2", status);
-//    vvd(p[2], 0.0, 0.0, "iauZp", "3", status);
-
-// }
-
-// static void t_zpv(int *status)
-// /*
-// **  - - - - - -
-// **   t _ z p v
-// **  - - - - - -
-// **
-// **  Test iauZpv function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauZpv, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double pv[2][3];
-
-
-//    pv[0][0] =  0.3;
-//    pv[0][1] =  1.2;
-//    pv[0][2] = -2.5;
-
-//    pv[1][0] = -0.5;
-//    pv[1][1] =  3.1;
-//    pv[1][2] =  0.9;
-
-//    iauZpv(pv);
-
-//    vvd(pv[0][0], 0.0, 0.0, "iauZpv", "p1", status);
-//    vvd(pv[0][1], 0.0, 0.0, "iauZpv", "p2", status);
-//    vvd(pv[0][2], 0.0, 0.0, "iauZpv", "p3", status);
-
-//    vvd(pv[1][0], 0.0, 0.0, "iauZpv", "v1", status);
-//    vvd(pv[1][1], 0.0, 0.0, "iauZpv", "v2", status);
-//    vvd(pv[1][2], 0.0, 0.0, "iauZpv", "v3", status);
-
-// }
-
-// static void t_zr(int *status)
-// /*
-// **  - - - - -
-// **   t _ z r
-// **  - - - - -
-// **
-// **  Test iauZr function.
-// **
-// **  Returned:
-// **     status    int         FALSE = success, TRUE = fail
-// **
-// **  Called:  iauZr, vvd
-// **
-// **  This revision:  2013 August 7
-// */
-// {
-//    double r[3][3];
-
-
-//    r[0][0] = 2.0;
-//    r[1][0] = 3.0;
-//    r[2][0] = 2.0;
-
-//    r[0][1] = 3.0;
-//    r[1][1] = 2.0;
-//    r[2][1] = 3.0;
-
-//    r[0][2] = 3.0;
-//    r[1][2] = 4.0;
-//    r[2][2] = 5.0;
-
-//    iauZr(r);
-
-//    vvd(r[0][0], 0.0, 0.0, "iauZr", "00", status);
-//    vvd(r[1][0], 0.0, 0.0, "iauZr", "01", status);
-//    vvd(r[2][0], 0.0, 0.0, "iauZr", "02", status);
-
-//    vvd(r[0][1], 0.0, 0.0, "iauZr", "10", status);
-//    vvd(r[1][1], 0.0, 0.0, "iauZr", "11", status);
-//    vvd(r[2][1], 0.0, 0.0, "iauZr", "12", status);
-
-//    vvd(r[0][2], 0.0, 0.0, "iauZr", "20", status);
-//    vvd(r[1][2], 0.0, 0.0, "iauZr", "21", status);
-//    vvd(r[2][2], 0.0, 0.0, "iauZr", "22", status);
-
-// }
+    #[test]
+    fn test_tpstv() {
+        
+    }
+
+    #[test]
+    fn test_tpxes() {
+        let ra = 1.3;
+        let dec = 1.55;
+        let raz = 2.3;
+        let decz = 1.5;
+
+        let mut j = 0;
+        let mut xi = 0.0;
+        let mut eta = 0.0;
+
+        unsafe {
+            j = iauTpxes(ra, dec, raz, decz, &mut xi, &mut eta);
+        }
+
+        abs_diff_eq!(xi, -0.01753200983236980595, epsilon=1e-15);
+        abs_diff_eq!(eta, 0.05962940005778712891, epsilon=1e-15);
+    }
+
+
+    #[test]
+    fn test_tpxev() {
+        let ra = 1.3;
+        let dec = 1.55;
+        let raz = 2.3;
+        let decz = 1.5;
+
+        let mut v = 0.0;
+        let mut vz = 0.0;
+
+        let mut xi = 0.0;
+        let mut eta = 0.0;
+
+        unsafe {
+            iauS2c(ra, dec, &mut v);
+            iauS2c(raz, decz, &mut vz);
+        }
+
+        abs_diff_eq!(xi, -0.01753200983236980595, epsilon=1e-15);
+        abs_diff_eq!(eta, 0.05962940005778712891, epsilon=1e-15);
+    }
+
+    #[test]
+    fn test_tr() {
+        let mut r = [[2.0, 3.0, 2.0],
+                    [3.0, 2.0, 3.0],
+                    [3.0, 4.0, 5.0]];
+                    
+        let mut rt = [[0.0; 3]; 3];
+
+            
+        unsafe {
+            iauTr(&mut r[0], &mut rt[0]);
+        }
+
+       assert_eq!(rt[0][0], 2.0);
+       assert_eq!(rt[0][1], 3.0);
+       assert_eq!(rt[0][2], 3.0);
+
+       assert_eq!(rt[1][0], 3.0);
+       assert_eq!(rt[1][1], 2.0);
+       assert_eq!(rt[1][2], 4.0);
+
+       assert_eq!(rt[2][0], 2.0);
+       assert_eq!(rt[2][1], 3.0);
+       assert_eq!(rt[2][2], 5.0);
+    }
+
+    #[test]
+    fn test_trxp() {
+        let mut r = [[2.0, 3.0, 2.0],
+                    [3.0, 2.0, 3.0],
+                    [3.0, 4.0, 5.0]];
+                    
+        let mut pv = [0.2, 1.5, 0.1];
+
+        let mut trp = [0.0; 3];
+
+            
+        unsafe {
+            iauTrxp(&mut r[0], &mut pv[0], &mut trp[0]);
+        }
+
+        abs_diff_eq!(trp[0], 5.2, epsilon=1e-12);
+        abs_diff_eq!(trp[1], 4.0, epsilon=1e-12);
+        abs_diff_eq!(trp[2], 5.4, epsilon=1e-12);
+    }
+
+
+    #[test]
+    fn test_trxpv() {
+        let mut r = [[2.0, 3.0, 2.0],
+                    [3.0, 2.0, 3.0],
+                    [3.0, 4.0, 5.0]];
+                    
+        let mut pv = [[0.2, 1.5, 0.1],
+                      [1.5, 0.2, 0.1]];
+
+        let mut trpv = [[0.0; 3]; 3];
+
+            
+        unsafe {
+            iauTrxpv(&mut r[0], &mut pv[0], &mut trpv[0]);
+        }
+
+       abs_diff_eq!(trpv[0][0], 5.2, epsilon=1e-12);
+       abs_diff_eq!(trpv[0][1], 4.0, epsilon=1e-12);
+       abs_diff_eq!(trpv[0][2], 5.4, epsilon=1e-12);
+
+       abs_diff_eq!(trpv[1][0], 3.9, epsilon=1e-12);
+       abs_diff_eq!(trpv[1][1], 5.3, epsilon=1e-12);
+       abs_diff_eq!(trpv[1][2], 4.1, epsilon=1e-12);
+    }
+
+    #[test]
+    fn test_tttai() {
+        let mut a1 = 0.0;
+        let mut a2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauTttai(2453750.5, 0.892482639, &mut a1, &mut a2);
+        }
+
+        abs_diff_eq!(a1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(a2, 0.892110139, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+
+    #[test]
+    fn test_tttcg() {
+        let mut g1 = 0.0;
+        let mut g2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauTttcg(2453750.5, 0.892855139, &mut g1, &mut g2);
+        }
+
+        abs_diff_eq!(g1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(g2, 0.8924900312508587113, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+    #[test]
+    fn test_tttdb() {
+        let mut b1 = 0.0;
+        let mut b2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauTttdb(2453750.5, 0.892855139, -0.000201, &mut b1, &mut b2);
+        }
+
+        abs_diff_eq!(b1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(b2, 0.8928551366736111111, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+    #[test]
+    fn test_tttut1() {
+        let mut u1 = 0.0;
+        let mut u2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauTtut1(2453750.5, 0.892104561, 64.8499, &mut u1, &mut u2);
+        }
+
+        abs_diff_eq!(u1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(u2, 0.8921045614537037037, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+
+    #[test]
+    fn test_ut1tai() {
+        let mut a1 = 0.0;
+        let mut a2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauUt1tai(2453750.5, 0.892104561, -32.6659, &mut a1, &mut a2);
+        }
+
+        abs_diff_eq!(a1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(a2, 0.8924826385462962963, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+    #[test]
+    fn test_ut1tt() {
+        let mut t1 = 0.0;
+        let mut t2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauUt1utc(2453750.5, 0.892104561, 64.8499, &mut t1, &mut t2);
+        }
+
+        abs_diff_eq!(t1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(t2, 0.8928551385462962963, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+    #[test]
+    fn test_ut1utc() {
+        let mut u1 = 0.0;
+        let mut u2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauUt1utc(2453750.5, 0.892104561, 0.3341, &mut u1, &mut u2);
+        }
+
+        abs_diff_eq!(u1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(u2, 0.8921006941018518519, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+
+    #[test]
+    fn test_utctai() {
+        let mut u1 = 0.0;
+        let mut u2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauUtctai(2453750.5, 0.892100694, &mut u1, &mut u2);
+        }
+
+        abs_diff_eq!(u1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(u2, 0.8924826384444444444, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+
+
+    #[test]
+    fn test_utcut1() {
+        let mut u1 = 0.0;
+        let mut u2 = 0.0;
+        let mut j  = 0;
+
+        unsafe {
+            j = iauUtcut1(2453750.5, 0.892100694, 0.3341, &mut u1, &mut u2);
+        }
+
+        abs_diff_eq!(u1, 2453750.5, epsilon=1e-6);
+        abs_diff_eq!(u2, 0.8921045608981481481, epsilon=1e-12);
+        assert_eq!(j, 0);
+
+    }
+
+    #[test]
+    fn test_xy06() {
+        let mut x = 0.0;
+        let mut y = 0.0;
+
+        unsafe {
+            iauXy06(2400000.5, 53736.0, &mut x, &mut y);
+        }
+
+        abs_diff_eq!(x,  0.5791308486706010975e-3, epsilon=1e-15);
+        abs_diff_eq!(y,  0.4020579816732958141e-4, epsilon=1e-16);
+    }
+
+
+    #[test]
+    fn test_xys00a() {
+        let mut x = 0.0;
+        let mut y = 0.0;
+        let mut s = 0.0;
+
+        unsafe {
+            iauXys00a(2400000.5, 53736.0, &mut x, &mut y, &mut s);
+        }
+
+        abs_diff_eq!(x,  0.5791308472168152904e-3, epsilon=1e-14);
+        abs_diff_eq!(y,  0.4020595661591500259e-4, epsilon=1e-15);
+        abs_diff_eq!(s, -0.1220040848471549623e-7, epsilon=1e-18);
+    }
+
+    #[test]
+    fn test_xys00b() {
+        let mut x = 0.0;
+        let mut y = 0.0;
+        let mut s = 0.0;
+
+        unsafe {
+            iauXys00b(2400000.5, 53736.0, &mut x, &mut y, &mut s);
+        }
+
+        abs_diff_eq!(x,  0.5791301929950208873e-3, epsilon=1e-14);
+        abs_diff_eq!(y,  0.4020553681373720832e-4, epsilon=1e-15);
+        abs_diff_eq!(s, -0.1220027377285083189e-7, epsilon=1e-18);
+    }
+
+    #[test]
+    fn test_xys06a() {
+        let mut x = 0.0;
+        let mut y = 0.0;
+        let mut s = 0.0;
+
+        unsafe {
+            iauXys06a(2400000.5, 53736.0, &mut x, &mut y, &mut s);
+        }
+
+        abs_diff_eq!(x,  0.5791308482835292617e-3, epsilon=1e-14);
+        abs_diff_eq!(y,  0.4020580099454020310e-4, epsilon=1e-15);
+        abs_diff_eq!(s, -0.1220032294164579896e-7, epsilon=1e-18);
+    }
+
+    #[test]
+    fn test_zp(){
+        let mut p = [0.3, 1.2, -2.5];
+
+        unsafe {
+            iauZp(&mut p[0]);
+        }
+    }
+
+    #[test]
+    fn test_pv() {
+        let mut pv = [[0.3, 1.2, -2.5],
+                      [-0.5, 3.1, 0.9]];
+
+        unsafe {
+            iauZpv(&mut pv[0]);
+        }
+
+        assert_eq!(pv[0][0], 0.0);
+        assert_eq!(pv[0][1], 0.0);
+        assert_eq!(pv[0][2], 0.0);
+
+        assert_eq!(pv[1][0], 0.0);
+        assert_eq!(pv[1][1], 0.0);
+        assert_eq!(pv[1][2], 0.0);
+    }
+
+    #[test]
+    fn test_zr() {
+        let mut r = [[0.0, 0.0, 0.0],
+                     [0.0, 0.0, 0.0],
+                     [0.0, 0.0, 0.0]];
+
+        unsafe {
+            iauZr(&mut r[0]);
+        }
+
+        assert_eq!(r[0][0], 0.0);
+        assert_eq!(r[1][0], 0.0);
+        assert_eq!(r[2][0], 0.0);
+
+        assert_eq!(r[0][1], 0.0);
+        assert_eq!(r[1][1], 0.0);
+        assert_eq!(r[2][1], 0.0);
+
+        assert_eq!(r[0][2], 0.0);
+        assert_eq!(r[1][2], 0.0);
+        assert_eq!(r[2][2], 0.0);
+    }
+}
