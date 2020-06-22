@@ -3,7 +3,6 @@ name = "rsofa"
 version = "0.1.0"
 authors = ["Duncan Eddy <duncan.eddy@gmail.com>"]
 edition = "2018"
-license = "MIT"
 license-file = "LICENSE"
 description = "Rust bindings of IAU SOFA C Library"
 homepage = "https://github.com/duncaneddy/rsofa"
