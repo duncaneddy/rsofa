@@ -58,9 +58,9 @@ void iauFk54z(double r2000, double d2000, double bepoch,
 **
 **  This revision:   2018 December 5
 **
-**  SOFA release 2019-07-22
+**  SOFA release 2020-07-21
 **
-**  Copyright (C) 2019 IAU SOFA Board.  See notes at end.
+**  Copyright (C) 2020 IAU SOFA Board.  See notes at end.
 */
 {
    double r, d, pr, pd, px, rv, p[3], w, v[3];
@@ -97,7 +97,7 @@ void iauFk54z(double r2000, double d2000, double bepoch,
 
 /*----------------------------------------------------------------------
 **
-**  Copyright (C) 2019
+**  Copyright (C) 2020
 **  Standards Of Fundamental Astronomy Board
 **  of the International Astronomical Union.
 **
