@@ -9,9 +9,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+      CARGO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+      SECRET_TEST: ${{ secrets.TEST_SECRET }}
       TEST: password1234
     steps:
       - uses: actions/checkout@v1
       - run: echo ${TEST}
-      - run: cargo publish --token ${CRATES_IO_TOKEN}
+      - run: echo ${TEST_SECRET}
+      - run: cargo publish --token ${CARGO_TOKEN}
