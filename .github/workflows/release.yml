@@ -8,13 +8,6 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-      SECRET_TEST: ${{ secrets.TEST_SECRET }}
-      TEST: password1234
     steps:
-      - uses: actions/checkout@v1
-      - run: echo ${TEST}
-      - run: echo $SECRET_TEST | sed -e 's/\(.\)/\1 /g'
-      - run: cargo login ${CRATES_IO_TOKEN}
-      - run: cargo publish --token ${CRATES_IO_TOKEN}
+      - uses: actions/checkout@v2
+      - run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
