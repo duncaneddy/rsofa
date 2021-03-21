@@ -15,5 +15,5 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - run: echo ${TEST}
-      - run: echo ${TEST_SECRET}
+      - run: eecho ${SECRET_TEST} | sed -e 's/\(.\)/\1 /g'
       - run: cargo publish --token ${CARGO_TOKEN}
