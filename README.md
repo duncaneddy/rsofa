@@ -1,5 +1,7 @@
 # rsofa
 
+[![Current Crates.io Version](https://img.shields.io/crates/v/rsofa.svg)](https://crates.io/crates/rsofa)
+
 rsofa is a library to provide International Astronomical
 Union's (http://www.iau.org/) SOFA library (http://www.iausofa.org/) in rust.
 
