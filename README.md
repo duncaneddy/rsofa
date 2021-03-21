@@ -27,6 +27,14 @@ Whenever a new version of the IAU SOFA C library is released, if that update
 includes the addition or deletion of a function in the library. the [build.rs](./build.rs) file should be updated to reflect the change. New functions should be
 added to the build list and deprecated functions removed.
 
+Note, `./extern/src/sofa.h` must be updated with the following line commented 
+out:
+```c
+// #include "math.h"
+```
+This prevents bindgen generating bindings from the C `math.h` headers which 
+cause later problems in the build process.
+
 The bindings can be generated manually with:
 
 ```bash

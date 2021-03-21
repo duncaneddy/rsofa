@@ -19,7 +19,7 @@
 */
 
 #include "sofam.h"
-#include "math.h"
+// #include "math.h"
 
 #ifdef __cplusplus
 extern "C" {
