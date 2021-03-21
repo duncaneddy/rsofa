@@ -4,7 +4,7 @@ extern crate bindgen;
 fn main() {
     // Generate Rust Bindings for C Library
     let bindings = bindgen::Builder::default()
-        .header("./extern/src/sofa.h")
+        .header("./extern/sofa.h") // Separate header than the source header
         .rustfmt_bindings(true)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
