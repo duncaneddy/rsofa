@@ -18,7 +18,7 @@
 **  Copyright (C) 2021 IAU SOFA Board.  See notes at end.
 */
 
-#include "sofam.h"
+#include "./src/sofam.h"
 // #include "math.h"
 
 #ifdef __cplusplus
