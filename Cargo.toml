@@ -1,6 +1,6 @@
 [package]
 name = "rsofa"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Duncan Eddy <duncan.eddy@gmail.com>"]
 edition = "2018"
 license-file = "LICENSE"
@@ -19,5 +19,5 @@ approx = "^0.3.0"
 
 [build-dependencies]
 cc ="1.0"
-bindgen = "0.56.0"
+bindgen = "0.57.0"
 rustfmt = "0.10.0"
