@@ -18,6 +18,7 @@ deviation is low.
 
 | Package Version | SOFA Release |
 | --------------- | ------------ | 
+| v0.4            | 2021-05-12   |
 | v0.3            | 2021-01-25   |
 | v0.2            | 2020-07-21   |
 | v0.1            | 2019-07-22   |
@@ -29,9 +30,8 @@ Whenever a new version of the IAU SOFA C library is released, if that update
 includes the addition or deletion of a function in the library. the [build.rs](./build.rs) file should be updated to reflect the change. New functions should be
 added to the build list and deprecated functions removed.
 
-Note, `./extern/sofa.h` must be updated by coping the contents of  `./extern/src/sofa.h` with the following lines adjusted out:
+Note, `./extern/sofa.h` must be updated by coping the contents of  `./extern/src/sofa.h` with the following line adjusted out:
 ```c
-#include "./src/sofam.h"
 // #include "math.h"
 ```
 This prevents bindgen generating bindings from the C `math.h` headers which 
