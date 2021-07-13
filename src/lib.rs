@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #[allow(improper_ctypes)]
-include!("./bindings.rs");
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 // Provide default constructors for SOFA types
 impl Default for iauASTROM {

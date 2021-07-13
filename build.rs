@@ -1,6 +1,9 @@
 extern crate cc;
 extern crate bindgen;
 
+use std::env;
+use std::path::PathBuf;
+
 fn main() {
     // Generate Rust Bindings for C Library
     let bindings = bindgen::Builder::default()
@@ -10,7 +13,8 @@ fn main() {
         .generate()
         .expect("Unable to generate bindings");
 
-    bindings.write_to_file("./src/bindings.rs")
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    bindings.write_to_file(out_path.join("bindings.rs"))
         .expect("Unable to save bindings");
 
     // Compile C library
