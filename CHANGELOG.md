@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [0.4.4] - 2021-12-28
+## [0.4.5] - 2021-12-28
 
 ### Fixed
 - Fixed bad documentation link
