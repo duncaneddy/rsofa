@@ -1,6 +1,6 @@
 [package]
 name = "rsofa"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Duncan Eddy <duncan.eddy@gmail.com>"]
 edition = "2018"
 license-file = "LICENSE"
@@ -15,7 +15,7 @@ readme = "README.md"
 [dependencies]
 
 [dev-dependencies]
-approx = "^0.3.0"
+approx = "^0.5.0"
 
 [build-dependencies]
 cc ="1.0"
