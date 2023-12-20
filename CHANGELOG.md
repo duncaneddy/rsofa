@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [0.5.0] - 2023-12-20
+
+### Changed
+- Updated to SOFA release 2023-10-11 ([PR 3](https://github.com/duncaneddy/rsofa/pull/3), Credit: @strizel)
+- Updated `build.rs` to use glob to grab all c-files to remove need to manually add files to bindings if more SOFA routines are added in the future
+- Remove hard-coded unit tests from `lib.rs` for specific routines. Coverage should be automated and complete, or not present to highlight testing gap.
+
 ## [0.4.5] - 2021-12-28
 
 ### Fixed
