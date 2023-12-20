@@ -3,3 +3,7 @@ Cargo.lock
 
 # Development
 .idea/*
+.vscode/*
+
+# Platform Specific Ignores
+*.DS_Store
